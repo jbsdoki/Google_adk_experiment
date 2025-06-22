@@ -6,3 +6,8 @@ https://www.msnbc.com/
 https://www.cnbc.com/finance/
 https://finance.yahoo.com/news/
 https://en.wikipedia.org/wiki/Johann_Reinhold_Forster
+https://news.google.com/
+https://news.google.com/topstories
+https://news.google.com/world
+https://news.google.com/business
+https://news.google.com/technology 
