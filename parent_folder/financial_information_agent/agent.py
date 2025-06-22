@@ -204,25 +204,316 @@ def analyze_financial_report(report_text: str) -> dict:
 
     return {"status": "success", "analysis": analysis_summary}
 
+def get_company_profile(symbol: str) -> dict:
+    """
+    Gets comprehensive company profile information using yfinance.
+    
+    Args:
+        symbol (str): The stock ticker symbol (e.g., "TSLA", "AAPL", "GOOGL").
+        
+    Returns:
+        dict: A dictionary with comprehensive company information.
+    """
+    if not YFINANCE_AVAILABLE:
+        return {
+            "status": "error", 
+            "error_message": "yfinance not available. Install with: pip install yfinance"
+        }
+    
+    try:
+        print(f"Fetching company profile for: {symbol.upper()}")
+        
+        ticker = yf.Ticker(symbol.upper())
+        info = ticker.info
+        
+        # Extract key company information
+        profile = {
+            "status": "success",
+            "symbol": symbol.upper(),
+            "company_name": info.get('longName', symbol.upper()),
+            "sector": info.get('sector', 'N/A'),
+            "industry": info.get('industry', 'N/A'),
+            "description": info.get('longBusinessSummary', 'No description available'),
+            "website": info.get('website', 'N/A'),
+            "employees": info.get('fullTimeEmployees', 'N/A'),
+            "country": info.get('country', 'N/A'),
+            "city": info.get('city', 'N/A'),
+            "state": info.get('state', 'N/A'),
+            "founded": info.get('founded', 'N/A'),
+            "ceo": info.get('companyOfficers', [{}])[0].get('name', 'N/A') if info.get('companyOfficers') else 'N/A',
+            "market_cap": f"${info.get('marketCap', 0):,}" if info.get('marketCap') else 'N/A',
+            "enterprise_value": f"${info.get('enterpriseValue', 0):,}" if info.get('enterpriseValue') else 'N/A',
+            "pe_ratio": f"{info.get('trailingPE', 0):.2f}" if info.get('trailingPE') else 'N/A',
+            "forward_pe": f"{info.get('forwardPE', 0):.2f}" if info.get('forwardPE') else 'N/A',
+            "price_to_book": f"{info.get('priceToBook', 0):.2f}" if info.get('priceToBook') else 'N/A',
+            "debt_to_equity": f"{info.get('debtToEquity', 0):.2f}" if info.get('debtToEquity') else 'N/A',
+            "profit_margins": f"{info.get('profitMargins', 0)*100:.2f}%" if info.get('profitMargins') else 'N/A',
+            "revenue_growth": f"{info.get('revenueGrowth', 0)*100:.2f}%" if info.get('revenueGrowth') else 'N/A',
+            "52_week_high": f"${info.get('fiftyTwoWeekHigh', 0):.2f}" if info.get('fiftyTwoWeekHigh') else 'N/A',
+            "52_week_low": f"${info.get('fiftyTwoWeekLow', 0):.2f}" if info.get('fiftyTwoWeekLow') else 'N/A',
+            "beta": f"{info.get('beta', 0):.2f}" if info.get('beta') else 'N/A',
+            "dividend_yield": f"{info.get('dividendYield', 0)*100:.2f}%" if info.get('dividendYield') else 'N/A'
+        }
+        
+        return profile
+        
+    except Exception as e:
+        return {
+            "status": "error", 
+            "error_message": f"Error fetching company profile for {symbol.upper()}: {str(e)}"
+        }
+
+def get_financial_metrics(symbol: str) -> dict:
+    """
+    Gets detailed financial metrics and ratios for a company.
+    
+    Args:
+        symbol (str): The stock ticker symbol.
+        
+    Returns:
+        dict: A dictionary with financial metrics and ratios.
+    """
+    if not YFINANCE_AVAILABLE:
+        return {
+            "status": "error", 
+            "error_message": "yfinance not available. Install with: pip install yfinance"
+        }
+    
+    try:
+        print(f"Fetching financial metrics for: {symbol.upper()}")
+        
+        ticker = yf.Ticker(symbol.upper())
+        
+        # Get financial statements
+        income_stmt = ticker.income_stmt
+        balance_sheet = ticker.balance_sheet
+        cash_flow = ticker.cashflow
+        
+        # Get latest annual data
+        if not income_stmt.empty:
+            latest_revenue = income_stmt.loc['Total Revenue'].iloc[0] if 'Total Revenue' in income_stmt.index else 0
+            latest_net_income = income_stmt.loc['Net Income'].iloc[0] if 'Net Income' in income_stmt.index else 0
+        else:
+            latest_revenue = 0
+            latest_net_income = 0
+            
+        if not balance_sheet.empty:
+            latest_assets = balance_sheet.loc['Total Assets'].iloc[0] if 'Total Assets' in balance_sheet.index else 0
+            latest_liabilities = balance_sheet.loc['Total Liabilities'].iloc[0] if 'Total Liabilities' in balance_sheet.index else 0
+        else:
+            latest_assets = 0
+            latest_liabilities = 0
+        
+        metrics = {
+            "status": "success",
+            "symbol": symbol.upper(),
+            "revenue": f"${latest_revenue:,.0f}" if latest_revenue else 'N/A',
+            "net_income": f"${latest_net_income:,.0f}" if latest_net_income else 'N/A',
+            "total_assets": f"${latest_assets:,.0f}" if latest_assets else 'N/A',
+            "total_liabilities": f"${latest_liabilities:,.0f}" if latest_liabilities else 'N/A',
+            "return_on_equity": f"{(latest_net_income / (latest_assets - latest_liabilities) * 100):.2f}%" if (latest_assets - latest_liabilities) > 0 else 'N/A',
+            "return_on_assets": f"{(latest_net_income / latest_assets * 100):.2f}%" if latest_assets > 0 else 'N/A'
+        }
+        
+        return metrics
+        
+    except Exception as e:
+        return {
+            "status": "error", 
+            "error_message": f"Error fetching financial metrics for {symbol.upper()}: {str(e)}"
+        }
+
+def get_enhanced_company_news(symbol: str) -> dict:
+    """
+    Gets enhanced news with better error handling and content extraction.
+    
+    Args:
+        symbol (str): The stock ticker symbol.
+        
+    Returns:
+        dict: A dictionary with enhanced news information.
+    """
+    if not YFINANCE_AVAILABLE:
+        return {
+            "status": "error", 
+            "error_message": "yfinance not available. Install with: pip install yfinance"
+        }
+    
+    try:
+        print(f"Fetching enhanced news for: {symbol.upper()}")
+        
+        ticker = yf.Ticker(symbol.upper())
+        news = ticker.news
+        
+        if not news:
+            return {
+                "status": "error", 
+                "error_message": f"No news found for {symbol.upper()}"
+            }
+        
+        # Process news with better error handling
+        processed_news = []
+        for article in news[:10]:
+            try:
+                processed_article = {
+                    "title": article.get('title', 'No title available'),
+                    "summary": article.get('summary', 'No summary available'),
+                    "publisher": article.get('publisher', 'Unknown publisher'),
+                    "published": article.get('published', 'Unknown date'),
+                    "url": article.get('link', ''),
+                    "sentiment": article.get('sentiment', 'neutral')
+                }
+                processed_news.append(processed_article)
+            except Exception as e:
+                print(f"Error processing article: {e}")
+                continue
+        
+        return {
+            "status": "success",
+            "symbol": symbol.upper(),
+            "news_count": len(processed_news),
+            "news_articles": processed_news
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error", 
+            "error_message": f"Error fetching news for {symbol.upper()}: {str(e)}"
+        }
+
+def get_company_wikipedia_info(company_name: str) -> dict:
+    """
+    Scrapes additional company information from Wikipedia and other sources.
+    This complements the API data with more detailed background information.
+    
+    Args:
+        company_name (str): The company name or symbol to search for.
+        
+    Returns:
+        dict: A dictionary with additional company information from web sources.
+    """
+    try:
+        print(f"Fetching Wikipedia info for: {company_name}")
+        
+        # Try to get Wikipedia info using the scraper
+        # First try with company name
+        wiki_url = f"https://en.wikipedia.org/wiki/{company_name.replace(' ', '_')}"
+        
+        # Use the scraper to get content
+        scraped_content = scraper.scrape_content(wiki_url)
+        
+        if "Failed to retrieve" in scraped_content or "No main content found" in scraped_content:
+            # Try alternative search
+            search_url = f"https://en.wikipedia.org/wiki/Special:Search/{company_name.replace(' ', '_')}"
+            scraped_content = scraper.scrape_content(search_url)
+        
+        if "Failed to retrieve" in scraped_content or "No main content found" in scraped_content:
+            return {
+                "status": "error",
+                "error_message": f"Could not find Wikipedia information for {company_name}"
+            }
+        
+        # Extract key information from the scraped content
+        content_lower = scraped_content.lower()
+        
+        # Look for key information patterns
+        info = {
+            "status": "success",
+            "company_name": company_name,
+            "source": "Wikipedia",
+            "content_preview": scraped_content[:500] + "..." if len(scraped_content) > 500 else scraped_content,
+            "key_facts": {}
+        }
+        
+        # Extract founding year if present
+        import re
+        founding_match = re.search(r'founded[^0-9]*(\d{4})', content_lower)
+        if founding_match:
+            info["key_facts"]["founded"] = founding_match.group(1)
+        
+        # Extract headquarters if present
+        hq_match = re.search(r'headquarters[^.]*\.', content_lower)
+        if hq_match:
+            info["key_facts"]["headquarters"] = hq_match.group(0).replace('headquarters', '').strip(' .')
+        
+        # Extract CEO if present
+        ceo_match = re.search(r'ceo[^.]*\.', content_lower)
+        if ceo_match:
+            info["key_facts"]["ceo"] = ceo_match.group(0).replace('ceo', '').strip(' .')
+        
+        return info
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error_message": f"Error fetching Wikipedia info for {company_name}: {str(e)}"
+        }
+
+def get_comprehensive_company_info(symbol: str) -> dict:
+    """
+    Gets comprehensive company information by combining multiple sources.
+    This is the main function that aggregates all company data.
+    
+    Args:
+        symbol (str): The stock ticker symbol.
+        
+    Returns:
+        dict: A comprehensive dictionary with all available company information.
+    """
+    print(f"Getting comprehensive information for: {symbol.upper()}")
+    
+    # Get all available information
+    stock_price = get_realtime_stock_price(symbol)
+    company_profile = get_company_profile(symbol)
+    financial_metrics = get_financial_metrics(symbol)
+    enhanced_news = get_enhanced_company_news(symbol)
+    
+    # Try to get Wikipedia info using company name
+    company_name = company_profile.get('company_name', symbol) if company_profile.get('status') == 'success' else symbol
+    wiki_info = get_company_wikipedia_info(company_name)
+    
+    # Compile comprehensive report
+    comprehensive_info = {
+        "status": "success",
+        "symbol": symbol.upper(),
+        "timestamp": "Current",
+        "stock_price": stock_price,
+        "company_profile": company_profile,
+        "financial_metrics": financial_metrics,
+        "news": enhanced_news,
+        "additional_info": wiki_info
+    }
+    
+    return comprehensive_info
 
 # Define your root agent
 root_agent = Agent(
     name="financial_analyst_agent", # Changed agent name to reflect its new focus
     model="gemini-2.0-flash",
     description=(
-        "An advanced financial analyst agent capable of scanning websites for content, "
-        "retrieving real-time stock prices, fetching company news, and analyzing "
-        "financial reports for key insights."
+        "An advanced financial analyst agent capable of providing comprehensive company information, "
+        "real-time stock prices, financial metrics, company profiles, news analysis, and web content scraping. "
+        "This agent combines multiple data sources including APIs and web scraping for complete financial analysis."
     ),
     instruction=(
-        "You are a sophisticated financial analyst. "
-        "When asked for stock prices, use the 'get_stock_price' tool. "
-        "When asked for company news, use the 'get_company_news' tool. "
-        "When a URL is provided for content extraction (e.g., articles, reports), "
-        "use the 'scan_website_content' tool. "
-        "If presented with text that appears to be a financial report or detailed financial data, "
-        "use the 'analyze_financial_report' tool to provide a summary or insights. "
-        "Always aim to provide concise and relevant financial information."
+        "You are a sophisticated financial analyst with access to comprehensive company data. "
+        "When asked for stock prices, use the 'get_stock_price' tool for real-time data. "
+        "When asked for company news, use the 'get_enhanced_company_news' tool for detailed news with summaries. "
+        "When asked for comprehensive company information, use the 'get_comprehensive_company_info' tool. "
+        "For specific company profiles, use 'get_company_profile'. "
+        "For financial metrics and ratios, use 'get_financial_metrics'. "
+        "When a URL is provided for content extraction, use the 'scan_website_content' tool. "
+        "If presented with text that appears to be a financial report, use the 'analyze_financial_report' tool. "
+        "Always provide detailed, well-structured responses with relevant financial context and insights."
     ),
-    tools=[scan_website_content, get_stock_price, get_company_news, analyze_financial_report],
+    tools=[
+        scan_website_content, 
+        get_stock_price, 
+        get_enhanced_company_news, 
+        analyze_financial_report, 
+        get_company_profile, 
+        get_financial_metrics, 
+        get_comprehensive_company_info,
+        get_company_wikipedia_info
+    ],
 )
