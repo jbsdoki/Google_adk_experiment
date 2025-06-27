@@ -18,7 +18,10 @@ from api_functions import (
     get_stock_price,
     get_company_profile,
     get_enhanced_company_news,
-    scan_website_content
+    scan_website_content,
+    check_robots_txt,
+    scrape_raw_content,
+    scrape_multiple_urls
 )
 
 # Define tool sets for different agent types
@@ -28,7 +31,9 @@ STOCK_HISTORY_TOOLS = [
     get_company_wikipedia_info,
     get_realtime_stock_price,
     get_company_news,
-    get_financial_metrics
+    get_financial_metrics,
+    check_robots_txt,
+    scrape_raw_content
 ]
 
 CURRENT_VALUATION_TOOLS = [
@@ -36,7 +41,8 @@ CURRENT_VALUATION_TOOLS = [
     get_company_profile,
     get_financial_metrics,
     get_realtime_stock_price,
-    get_comprehensive_company_info
+    get_comprehensive_company_info,
+    check_robots_txt
 ]
 
 FUTURE_OUTLOOK_TOOLS = [
@@ -44,7 +50,10 @@ FUTURE_OUTLOOK_TOOLS = [
     scan_website_content,
     get_company_wikipedia_info,
     get_company_news,
-    get_comprehensive_company_info
+    get_comprehensive_company_info,
+    check_robots_txt,
+    scrape_raw_content,
+    scrape_multiple_urls
 ]
 
 # All tools available to any agent
@@ -58,7 +67,10 @@ ALL_TOOLS = [
     get_stock_price,
     get_company_profile,
     get_enhanced_company_news,
-    scan_website_content
+    scan_website_content,
+    check_robots_txt,
+    scrape_raw_content,
+    scrape_multiple_urls
 ]
 
 def get_tools_for_agent(agent_type: str) -> list:
