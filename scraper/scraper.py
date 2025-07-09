@@ -13,6 +13,11 @@ import os
 # from webdriver_manager.chrome import ChromeDriverManager
 # import time
 
+# Define a browser-like User-Agent header for all requests
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+
 # Define a temporary storage directory for unprocessed HTML files
 # This is mainly for local testing/debugging if needed, the agent will process in-memory.
 TEMP_UNPROCESSED_DIR = 'temp_unprocessed_html'
@@ -28,7 +33,7 @@ def check_robots_txt(url):
     parsed_url = urlparse(url)
     robots_url = urljoin(f"{parsed_url.scheme}://{parsed_url.netloc}", '/robots.txt')
     try:
-        response = requests.get(robots_url, timeout=5)
+        response = requests.get(robots_url, headers=HEADERS, timeout=5)
         if response.status_code == 200:
             # A very basic check: if 'Disallow: /' is present, assume general disallow.
             # For a production system, use a proper robots.txt parser like 'robotparser'.
@@ -58,7 +63,7 @@ def scrape_content(url: str) -> str:
         return f"Scraping of {url} is disallowed by robots.txt."
 
     try:
-        response = requests.get(url, timeout=15)
+        response = requests.get(url, headers=HEADERS, timeout=15)
         response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
         
         soup = BeautifulSoup(response.content, 'html.parser')
